@@ -107,7 +107,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a2a4a 50%, #0f1f3a 100%);
+            background: #0d0e12;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -116,6 +116,20 @@
             z-index: 100;
             pointer-events: auto;
             animation: fadeIn 0.5s ease-in;
+            overflow: hidden;
+        }
+        
+        #start-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 204, 0.03) 2px, rgba(0, 255, 204, 0.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 255, 204, 0.03) 2px, rgba(0, 255, 204, 0.03) 4px);
+            pointer-events: none;
         }
         
         @keyframes fadeIn {
@@ -123,88 +137,204 @@
             to { opacity: 1; }
         }
 
-        h1 { 
-            margin-bottom: 15px; 
-            font-size: 3.5em; 
-            font-weight: 800;
-            background: linear-gradient(135deg, #4db8ff, #88ffaa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 40px rgba(77, 184, 255, 0.5);
-            animation: titleGlow 3s ease-in-out infinite;
+        .tactical-header {
+            position: relative;
+            text-align: center;
+            margin-bottom: 60px;
+            z-index: 1;
         }
         
-        @keyframes titleGlow {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.2); }
+        .tactical-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        
+        .tactical-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #00ffcc;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0, 255, 204, 0); }
+        }
+        
+        h1 { 
+            margin: 0 0 12px 0; 
+            font-size: 3.2em; 
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
         }
         
         .subtitle { 
-            margin-bottom: 50px; 
-            color: rgba(255, 255, 255, 0.7); 
-            font-size: 1.3em;
-            font-weight: 300;
-            letter-spacing: 0.5px;
+            margin: 0; 
+            color: #00ffcc; 
+            font-size: 0.9em;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .tactical-version {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #00ffcc;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
         }
         
         .mode-select {
             display: flex;
-            gap: 30px;
+            gap: 40px;
             margin-top: 30px;
+            z-index: 1;
+            position: relative;
         }
 
         .btn {
-            padding: 25px 50px;
-            font-size: 19px;
+            width: 320px;
+            background: rgba(13, 14, 18, 0.8);
+            border: 2px solid rgba(0, 255, 204, 0.2);
+            border-radius: 12px;
+            padding: 0;
             cursor: pointer;
-            border: none;
-            border-radius: 15px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            font-weight: 700;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            letter-spacing: 0.5px;
+            backdrop-filter: blur(10px);
         }
         
         .btn::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 204, 0.1), transparent);
+            transition: left 0.5s;
         }
         
         .btn:hover::before {
-            width: 300px;
-            height: 300px;
+            left: 100%;
+        }
+        
+        .btn:hover {
+            border-color: rgba(0, 255, 204, 0.5);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            transform: translateY(-4px);
+        }
+        
+        .btn-content {
+            padding: 30px 25px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .btn-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .btn-icon-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .btn-icon {
+            font-size: 32px;
+            line-height: 1;
+        }
+        
+        .btn-mod {
+            background: rgba(0, 255, 204, 0.15);
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .btn-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0 0 8px 0;
+            text-align: right;
+        }
+        
+        .btn-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 1px;
+            text-align: right;
+            margin: 0;
+        }
+        
+        .btn-accent {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
         }
 
-        .btn-hotspot { 
-            background: linear-gradient(135deg, #ff4d4d, #ff8c8c, #ffb3b3); 
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+        .btn-hotspot {
+            --accent-color: #ffd700;
         }
         
-        .btn-tracking { 
-            background: linear-gradient(135deg, #4dff88, #88ffaa, #aaffcc); 
-            color: #003d00;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+        .btn-hotspot .btn-icon {
+            color: #ffd700;
         }
         
-        .btn:hover { 
-            transform: scale(1.08) translateY(-8px); 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        .btn-hotspot .btn-title {
+            color: #ffd700;
         }
         
-        .btn:active {
-            transform: scale(1.02) translateY(-2px);
+        .btn-tracking {
+            --accent-color: #00ffcc;
+        }
+        
+        .btn-tracking .btn-icon {
+            color: #00ffcc;
+        }
+        
+        .btn-tracking .btn-title {
+            color: #00ffcc;
         }
 
         #notification {
@@ -459,17 +589,43 @@
 <body>
 
     <div id="start-screen">
-        <h1>🌍 المستكشف الصغير</h1>
-        <p class="subtitle">استكشف العالم وتعلم الجغرافيا بطريقة تفاعلية</p>
-        <p style="font-size: 1.1em; margin-bottom: 20px;">اختر طريقة اللعب:</p>
+        <div class="tactical-version">Lvl 09</div>
+        
+        <div class="tactical-header">
+            <div class="tactical-badge">
+                Tactical Command
+            </div>
+            <h1>المستكشف الصغير</h1>
+            <p class="subtitle">Tactical Interface v2.0</p>
+        </div>
+        
         <div class="mode-select">
-            <button class="btn btn-hotspot" onclick="startGame('hotspot')">
-                🎯 دليل التعقب<br>
-                <small style="font-size: 0.8em;">(Hotspot Mode)</small>
-            </button>
             <button class="btn btn-tracking" onclick="startGame('tracking')">
-                🗺️ دليل المسار<br>
-                <small style="font-size: 0.8em;">(Tracking Mode)</small>
+                <div class="btn-content">
+                    <div class="btn-header">
+                        <div class="btn-icon-wrapper">
+                            <span class="btn-icon">🗺️</span>
+                            <span class="btn-mod">MOD_A</span>
+                        </div>
+                    </div>
+                    <h2 class="btn-title">TRACKING</h2>
+                    <p class="btn-desc">Locate & Lock</p>
+                </div>
+                <div class="btn-accent"></div>
+            </button>
+            
+            <button class="btn btn-hotspot" onclick="startGame('hotspot')">
+                <div class="btn-content">
+                    <div class="btn-header">
+                        <div class="btn-icon-wrapper">
+                            <span class="btn-icon">🎯</span>
+                            <span class="btn-mod">MOD_B</span>
+                        </div>
+                    </div>
+                    <h2 class="btn-title">HOTSPOT</h2>
+                    <p class="btn-desc">Climate Analysis</p>
+                </div>
+                <div class="btn-accent"></div>
             </button>
         </div>
     </div>
