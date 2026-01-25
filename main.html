@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المستكشف الصغير - Little Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: rtl;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #hud-top {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        #minimap-container {
+            width: 200px;
+            height: 200px;
+            background: rgba(10, 10, 26, 0.85);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(77, 184, 255, 0.5);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            pointer-events: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 
+                        inset 0 0 20px rgba(77, 184, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #minimap-container:hover {
+            border-color: rgba(77, 184, 255, 0.8);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 
+                        inset 0 0 30px rgba(77, 184, 255, 0.2);
+        }
+
+        #minimap-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #task-panel {
+            background: linear-gradient(135deg, rgba(10, 10, 26, 0.9), rgba(26, 42, 74, 0.85));
+            backdrop-filter: blur(15px);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            max-width: 320px;
+            pointer-events: auto;
+            border: 2px solid rgba(77, 184, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 
+                        0 0 20px rgba(77, 184, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #task-panel:hover {
+            border-color: rgba(77, 184, 255, 0.5);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 
+                        0 0 30px rgba(77, 184, 255, 0.2);
+        }
+
+        #task-panel h2 { 
+            margin: 0 0 12px 0; 
+            font-size: 20px; 
+            color: #4db8ff; 
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(77, 184, 255, 0.5);
+        }
+        
+        #task-panel p { 
+            margin: 8px 0; 
+            font-size: 15px; 
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a2a4a 50%, #0f1f3a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 100;
+            pointer-events: auto;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        h1 { 
+            margin-bottom: 15px; 
+            font-size: 3.5em; 
+            font-weight: 800;
+            background: linear-gradient(135deg, #4db8ff, #88ffaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(77, 184, 255, 0.5);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+        
+        .subtitle { 
+            margin-bottom: 50px; 
+            color: rgba(255, 255, 255, 0.7); 
+            font-size: 1.3em;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+        
+        .mode-select {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 25px 50px;
+            font-size: 19px;
+            cursor: pointer;
+            border: none;
+            border-radius: 15px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: 700;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-hotspot { 
+            background: linear-gradient(135deg, #ff4d4d, #ff8c8c, #ffb3b3); 
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-tracking { 
+            background: linear-gradient(135deg, #4dff88, #88ffaa, #aaffcc); 
+            color: #003d00;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover { 
+            transform: scale(1.08) translateY(-8px); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+        
+        .btn:active {
+            transform: scale(1.02) translateY(-2px);
+        }
+
+        #notification {
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, rgba(10, 10, 26, 0.98), rgba(26, 42, 74, 0.95));
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 0;
+            border-radius: 24px;
+            font-size: 16px;
+            border: 3px solid #4dff88;
+            display: none;
+            z-index: 50;
+            width: 420px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 
+                        0 0 40px rgba(77, 255, 136, 0.4),
+                        inset 0 0 30px rgba(77, 255, 136, 0.05);
+            animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateY(-50%) translateX(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(-50%) translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        #notification::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #notification::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        #notification::-webkit-scrollbar-thumb {
+            background: rgba(77, 255, 136, 0.5);
+            border-radius: 10px;
+        }
+        
+        #notification::-webkit-scrollbar-thumb:hover {
+            background: rgba(77, 255, 136, 0.7);
+        }
+        
+        #notification-header {
+            background: linear-gradient(135deg, #4dff88, #2d8a5f, #1a6b47);
+            color: #004d00;
+            padding: 25px;
+            border-radius: 21px 21px 0 0;
+            font-weight: 800;
+            font-size: 26px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #notification-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        #notification-body {
+            padding: 30px;
+        }
+        
+        #notification-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+        
+        #notification-image:hover {
+            transform: scale(1.02);
+        }
+        
+        #notification-coords {
+            background: rgba(77, 255, 136, 0.15);
+            padding: 12px;
+            border-radius: 10px;
+            margin: 18px 0;
+            font-family: 'Courier New', monospace;
+            color: #4dff88;
+            text-align: center;
+            border: 1px solid rgba(77, 255, 136, 0.3);
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        #notification-fact {
+            background: rgba(255, 200, 100, 0.12);
+            padding: 18px;
+            border-radius: 12px;
+            margin: 18px 0;
+            border-left: 5px solid #ffc864;
+            box-shadow: 0 4px 15px rgba(255, 200, 100, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #notification-fact:hover {
+            background: rgba(255, 200, 100, 0.18);
+            transform: translateX(-5px);
+        }
+        
+        #notification-curriculum {
+            background: rgba(100, 200, 255, 0.12);
+            padding: 18px;
+            border-radius: 12px;
+            margin: 18px 0;
+            border-left: 5px solid #64c8ff;
+            box-shadow: 0 4px 15px rgba(100, 200, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #notification-curriculum:hover {
+            background: rgba(100, 200, 255, 0.18);
+            transform: translateX(-5px);
+        }
+        
+        #notification-quiz {
+            background: rgba(255, 100, 200, 0.12);
+            padding: 18px;
+            border-radius: 12px;
+            margin: 18px 0;
+            border-left: 5px solid #ff64c8;
+            box-shadow: 0 4px 15px rgba(255, 100, 200, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #notification-quiz:hover {
+            background: rgba(255, 100, 200, 0.18);
+        }
+        
+        .quiz-options {
+            margin-top: 10px;
+        }
+        
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 14px 18px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .quiz-option:hover {
+            background: rgba(77, 255, 136, 0.25);
+            border-color: #4dff88;
+            transform: translateX(-8px);
+            box-shadow: 0 4px 15px rgba(77, 255, 136, 0.2);
+        }
+        
+        .quiz-option.correct {
+            background: rgba(77, 255, 136, 0.3);
+            border-color: #4dff88;
+        }
+        
+        .quiz-option.wrong {
+            background: rgba(255, 77, 77, 0.3);
+            border-color: #ff4d4d;
+        }
+        
+        #menu-button {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(10, 10, 26, 0.9), rgba(26, 42, 74, 0.85));
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid #4dff88;
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 700;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+            z-index: 100;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        #menu-button:hover {
+            background: linear-gradient(135deg, #4dff88, #88ffaa);
+            color: #003d00;
+            transform: translateX(-50%) scale(1.08) translateY(-3px);
+            box-shadow: 0 12px 35px rgba(77, 255, 136, 0.4);
+        }
+        
+        #menu-button:active {
+            transform: translateX(-50%) scale(1.02);
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.8);
+            background: linear-gradient(135deg, rgba(10, 10, 26, 0.85), rgba(26, 42, 74, 0.8));
+            backdrop-filter: blur(8px);
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(77, 184, 255, 0.3);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #globe-container {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1>🌍 المستكشف الصغير</h1>
+        <p class="subtitle">استكشف العالم وتعلم الجغرافيا بطريقة تفاعلية</p>
+        <p style="font-size: 1.1em; margin-bottom: 20px;">اختر طريقة اللعب:</p>
+        <div class="mode-select">
+            <button class="btn btn-hotspot" onclick="startGame('hotspot')">
+                🎯 دليل التعقب<br>
+                <small style="font-size: 0.8em;">(Hotspot Mode)</small>
+            </button>
+            <button class="btn btn-tracking" onclick="startGame('tracking')">
+                🗺️ دليل المسار<br>
+                <small style="font-size: 0.8em;">(Tracking Mode)</small>
+            </button>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <button id="menu-button" onclick="returnToMenu()" style="display: none;">🏠 القائمة الرئيسية</button>
+        
+        <div id="hud-top">
+            <div id="task-panel">
+                <h2 id="quest-title">المهمة الحالية</h2>
+                <p id="quest-desc">جاري تحميل بيانات المهمة...</p>
+                <p style="margin-top:10px; color:#aaa; font-size:12px;">
+                    المسافة: <span id="dist-display">0</span>
+                </p>
+            </div>
+            
+            <div id="minimap-container">
+                <canvas id="minimap-canvas" width="200" height="200"></canvas>
+            </div>
+        </div>
+        <div id="controls-hint">
+            استخدم الأسهم أو WASD للتحكم في الكرة الأرضية
+        </div>
+    </div>
+
+    <div id="notification">
+        <div id="notification-header">🎉 تم اكتشاف الموقع!</div>
+        <div id="notification-body">
+            <img id="notification-image" src="" alt="">
+            <h3 id="notification-title" style="margin: 0 0 10px 0; color: #4dff88;"></h3>
+            <p id="notification-desc" style="margin-bottom: 15px;"></p>
+            <div id="notification-coords"></div>
+            <div id="notification-fact">
+                <strong style="color: #ffc864;">💡 حقيقة ممتعة:</strong>
+                <p id="notification-fun-fact" style="margin: 5px 0 0 0;"></p>
+            </div>
+            <div id="notification-curriculum">
+                <strong style="color: #64c8ff;">📚 من المنهج:</strong>
+                <p id="notification-curriculum-fact" style="margin: 5px 0 0 0;"></p>
+            </div>
+            <div id="notification-quiz">
+                <strong style="color: #ff64c8;">🧠 سؤال تحدي:</strong>
+                <p id="notification-question" style="margin: 10px 0;"></p>
+                <div class="quiz-options" id="quiz-options"></div>
+            </div>
+            <button onclick="continueGame()" style="
+                width: 100%;
+                background: linear-gradient(135deg, #4dff88, #88ffaa);
+                color: #004d00;
+                border: none;
+                padding: 15px;
+                font-size: 18px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: bold;
+                margin-top: 20px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                transition: all 0.3s;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">متابعة ➜</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== GAME CONFIGURATION =====
+        const GLOBE_RADIUS = 500;
+        const ROTATION_SPEED = 0.5;
+        let selectedMode = 'hotspot';
+        let globeMesh = null;
+        let hotspotMarkers = [];
+        let isZooming = false;
+        
+        const quests = [
+            {
+                id: 1,
+                title: "جبال الهيمالايا",
+                desc: "أعلى سلسلة جبال في العالم، تقع في آسيا",
+                lat: 28.0,
+                lon: 84.0,
+                color: 0xffffff,
+                radius: 50,
+                image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+                funFact: "قمة إيفرست هي أعلى نقطة على سطح الأرض بارتفاع 8,849 متر! وهي تنمو بمعدل 4 ملم سنوياً بسبب حركة الصفائح التكتونية.",
+                curriculumFact: "تشكلت جبال الهيمالايا منذ حوالي 50 مليون سنة نتيجة اصطدام الصفيحة الهندية بالصفيحة الآسيوية، وهي مثال حي على تكوين الجبال الالتوائية.",
+                quiz: {
+                    question: "ما هو ارتفاع قمة إيفرست تقريباً؟",
+                    options: ["5,895 متر", "7,200 متر", "8,849 متر", "9,500 متر"],
+                    correct: 2
+                }
+            },
+            {
+                id: 2,
+                title: "هضبة التبت",
+                desc: "أعلى هضبة في العالم، تُعرف بسقف العالم",
+                lat: 32.0,
+                lon: 85.0,
+                color: 0xffcc00,
+                radius: 50,
+                image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800",
+                funFact: "يبلغ متوسط ارتفاع هضبة التبت 4,500 متر! لذلك يحتاج الزوار لوقت للتأقلم مع نقص الأكسجين. كما تُعتبر خزان المياه الآسيوي حيث تنبع منها أهم الأنهار.",
+                curriculumFact: "تُعرف هضبة التبت بـ'سقف العالم' وهي أكبر وأعلى هضبة على الأرض. تغطي مساحة 2.5 مليون كم² وتحتوي على أكبر احتياطي جليدي خارج القطبين.",
+                quiz: {
+                    question: "لماذا تُسمى هضبة التبت بـ'سقف العالم'؟",
+                    options: ["لأنها مغطاة بالثلوج", "لأنها أعلى هضبة في العالم", "لأنها قريبة من السماء", "لأن بها أطول مبنى"],
+                    correct: 1
+                }
+            },
+            {
+                id: 3,
+                title: "سهول الأنهار الصينية",
+                desc: "المناطق المنخفضة الخصبة في شرق آسيا",
+                lat: 30.0,
+                lon: 110.0,
+                color: 0x4db8ff,
+                radius: 50,
+                image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800",
+                funFact: "يعيش في سهول الأنهار الصينية أكثر من 400 مليون شخص! وهي من أكثر المناطق كثافة سكانية في العالم بفضل خصوبة التربة ووفرة المياه.",
+                curriculumFact: "تتكون السهول الفيضية من رواسب الأنهار التي تترسب على مدى آلاف السنين. نهر اليانغتسي ونهر الأصفر يشكلان أهم سهول الصين الزراعية.",
+                quiz: {
+                    question: "ما الذي يجعل السهول الفيضية خصبة للزراعة؟",
+                    options: ["كثرة الأمطار فقط", "الرواسب الغنية التي تتركها الأنهار", "قربها من البحر", "ارتفاعها المنخفض"],
+                    correct: 1
+                }
+            }
+        ];
+        
+        let currentQuestIndex = 0;
+        let isGameActive = false;
+
+        // ===== THREE.JS GLOBALS =====
+        let scene, camera, renderer;
+        let clock = new THREE.Clock();
+        let globeGroup;
+
+        // ===== INPUT HANDLING =====
+        const keys = { w: false, a: false, s: false, d: false };
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1a);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 3000);
+            camera.position.set(0, 0, 1500);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Improved lighting for better Earth visualization
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // Main directional light (sun)
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(500, 300, 500);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+            
+            // Add subtle fill light from opposite side
+            const fillLight = new THREE.DirectionalLight(0x4db8ff, 0.3);
+            fillLight.position.set(-500, -200, -500);
+            scene.add(fillLight);
+
+            globeGroup = new THREE.Group();
+            scene.add(globeGroup);
+
+            generateGlobe();
+            generateHotspotMarkers();
+
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('keydown', (e) => onKey(e, true));
+            document.addEventListener('keyup', (e) => onKey(e, false));
+
+            animate();
+        }
+
+        function generateGlobe() {
+            const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64);
+            
+            // Load Earth texture from CDN
+            const textureLoader = new THREE.TextureLoader();
+            
+            // Using NASA's Blue Marble texture (high quality Earth map)
+            const earthTexture = textureLoader.load(
+                'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+                () => {
+                    console.log('Earth texture loaded successfully');
+                },
+                undefined,
+                () => {
+                    console.log('Failed to load texture, using fallback');
+                    // Fallback to colored globe if texture fails
+                    globeMesh.material.color.set(0x2d5016);
+                }
+            );
+            
+            // Load bump map for terrain relief
+            const bumpTexture = textureLoader.load(
+                'https://unpkg.com/three-globe/example/img/earth-topology.png'
+            );
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                map: earthTexture,
+                bumpMap: bumpTexture,
+                bumpScale: 10,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            
+            globeMesh = new THREE.Mesh(geometry, material);
+            globeMesh.receiveShadow = true;
+            globeMesh.castShadow = true;
+            globeGroup.add(globeMesh);
+            
+            // Add atmosphere glow effect
+            const atmosphereGeometry = new THREE.SphereGeometry(GLOBE_RADIUS + 10, 64, 64);
+            const atmosphereMaterial = new THREE.MeshBasicMaterial({
+                color: 0x4db8ff,
+                transparent: true,
+                opacity: 0.1,
+                side: THREE.BackSide
+            });
+            const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+            globeGroup.add(atmosphereMesh);
+        }
+
+        function generateHotspotMarkers() {
+            quests.forEach(q => {
+                // Convert lat/lon to 3D coordinates on sphere
+                const phi = (90 - q.lat) * (Math.PI / 180);
+                const theta = (q.lon + 180) * (Math.PI / 180);
+                
+                // Position on surface
+                const x = -GLOBE_RADIUS * Math.sin(phi) * Math.cos(theta);
+                const y = GLOBE_RADIUS * Math.cos(phi);
+                const z = GLOBE_RADIUS * Math.sin(phi) * Math.sin(theta);
+                
+                const markerGroup = new THREE.Group();
+                
+                // Elegant pin base (smaller)
+                const baseGeo = new THREE.SphereGeometry(8, 16, 16);
+                const baseMat = new THREE.MeshStandardMaterial({ 
+                    color: q.color,
+                    emissive: q.color,
+                    emissiveIntensity: 0.6,
+                    metalness: 0.4,
+                    roughness: 0.3
+                });
+                const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+                markerGroup.add(baseMesh);
+                
+                // Elegant pointer cone (smaller, pointing outward)
+                const pointerGeo = new THREE.ConeGeometry(4, 20, 8);
+                const pointerMesh = new THREE.Mesh(pointerGeo, baseMat);
+                pointerMesh.position.y = 14; // Point outward from surface
+                markerGroup.add(pointerMesh);
+                
+                // Subtle glowing ring
+                const ringGeo = new THREE.RingGeometry(10, 13, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ 
+                    color: q.color,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.rotation.x = Math.PI / 2;
+                markerGroup.add(ringMesh);
+                
+                // Position marker on surface
+                markerGroup.position.set(x, y, z);
+                
+                // Orient perpendicular to surface (point outward from center)
+                const normal = new THREE.Vector3(x, y, z).normalize();
+                markerGroup.quaternion.setFromUnitVectors(
+                    new THREE.Vector3(0, 1, 0),
+                    normal
+                );
+                
+                // Store reference for animation
+                q.marker = markerGroup;
+                q.markerRing = ringMesh;
+                hotspotMarkers.push(markerGroup);
+                
+                globeGroup.add(markerGroup);
+            });
+        }
+
+        function startGame(mode) {
+            selectedMode = mode;
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('menu-button').style.display = 'block';
+            
+            isZooming = true;
+            const startTime = Date.now();
+            const zoomDuration = 2000;
+            const startZ = camera.position.z;
+            const targetZ = 800;
+            
+            const zoomInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / zoomDuration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                camera.position.z = startZ + (targetZ - startZ) * easeProgress;
+                
+                if (progress >= 1) {
+                    clearInterval(zoomInterval);
+                    isZooming = false;
+                    isGameActive = true;
+                    updateQuestUI();
+                }
+            }, 16);
+        }
+
+        function rotateGlobe(dt) {
+            if (!isGameActive) return;
+            
+            const rotSpeed = ROTATION_SPEED * dt;
+            
+            if (keys.w) globeGroup.rotation.x += rotSpeed;
+            if (keys.s) globeGroup.rotation.x -= rotSpeed;
+            if (keys.a) globeGroup.rotation.y += rotSpeed;
+            if (keys.d) globeGroup.rotation.y -= rotSpeed;
+        }
+
+        function onKey(e, down) {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = down;
+            if (e.key === 'ArrowUp') keys.w = down;
+            if (e.key === 'ArrowDown') keys.s = down;
+            if (e.key === 'ArrowLeft') keys.a = down;
+            if (e.key === 'ArrowRight') keys.d = down;
+        }
+
+        function updateQuestUI() {
+            if(currentQuestIndex >= quests.length) {
+                document.getElementById('quest-title').innerText = "مهمة مكتملة!";
+                document.getElementById('quest-desc').innerText = "لقد اكتشفت جميع المواقع!";
+                return;
+            }
+            const q = quests[currentQuestIndex];
+            document.getElementById('quest-title').innerText = q.title;
+            document.getElementById('quest-desc').innerText = q.desc;
+        }
+
+        function checkHotspotInCenter() {
+            if (currentQuestIndex >= quests.length || !isGameActive) return;
+            
+            const q = quests[currentQuestIndex];
+            if (!q.marker) return;
+            
+            // Get marker position in world space
+            const markerWorldPos = q.marker.position.clone();
+            markerWorldPos.applyMatrix4(globeGroup.matrixWorld);
+            
+            // Calculate vector from camera to marker
+            const cameraToMarker = markerWorldPos.clone().sub(camera.position);
+            
+            // Get the normal vector of the marker (pointing outward from globe center)
+            // This is the marker's local position transformed by globe rotation
+            const markerNormal = q.marker.position.clone();
+            markerNormal.applyMatrix4(globeGroup.matrixWorld);
+            markerNormal.sub(globeGroup.position); // Remove globe position offset
+            markerNormal.normalize();
+            
+            // Calculate dot product between camera-to-marker vector and marker normal
+            // If negative, marker is facing away from camera (on back side)
+            const dotProduct = cameraToMarker.normalize().dot(markerNormal);
+            
+            // Marker is visible only if it's facing the camera (dot product < 0)
+            // Because the normal points outward, and camera is looking at it
+            const isFacingCamera = dotProduct < 0;
+            
+            // Project to screen space for distance check
+            const markerScreenPos = markerWorldPos.clone();
+            markerScreenPos.project(camera);
+            
+            // Check if marker is within screen bounds (not behind camera)
+            const isInFrontOfCamera = markerScreenPos.z < 1;
+            
+            const distFromCenter = Math.sqrt(markerScreenPos.x * markerScreenPos.x + markerScreenPos.y * markerScreenPos.y);
+            
+            document.getElementById('dist-display').innerText = Math.floor(distFromCenter * 100);
+            
+            // Only trigger if marker is in center AND facing camera AND in front of camera
+            if (distFromCenter < 0.15 && isFacingCamera && isInFrontOfCamera) {
+                isGameActive = false;
+                showHotspotInfo(q);
+            }
+        }
+        
+        function showHotspotInfo(hotspot) {
+            // Update all notification elements
+            document.getElementById('notification-image').src = hotspot.image;
+            document.getElementById('notification-title').innerText = hotspot.title;
+            document.getElementById('notification-desc').innerText = hotspot.desc;
+            document.getElementById('notification-coords').innerHTML = `
+                📍 الإحداثيات: <strong>${hotspot.lat.toFixed(2)}°N, ${hotspot.lon.toFixed(2)}°E</strong>
+            `;
+            document.getElementById('notification-fun-fact').innerText = hotspot.funFact;
+            document.getElementById('notification-curriculum-fact').innerText = hotspot.curriculumFact;
+            document.getElementById('notification-question').innerText = hotspot.quiz.question;
+            
+            // Generate quiz options
+            const quizContainer = document.getElementById('quiz-options');
+            quizContainer.innerHTML = '';
+            hotspot.quiz.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'quiz-option';
+                optionDiv.innerText = option;
+                optionDiv.onclick = () => checkQuizAnswer(index, hotspot.quiz.correct, optionDiv);
+                quizContainer.appendChild(optionDiv);
+            });
+            
+            document.getElementById('notification').style.display = 'block';
+        }
+        
+        function checkQuizAnswer(selected, correct, element) {
+            // Disable all options
+            const allOptions = document.querySelectorAll('.quiz-option');
+            allOptions.forEach(opt => {
+                opt.onclick = null;
+                opt.style.cursor = 'default';
+            });
+            
+            // Mark correct and wrong answers
+            if (selected === correct) {
+                element.classList.add('correct');
+                element.innerHTML += ' ✓';
+            } else {
+                element.classList.add('wrong');
+                element.innerHTML += ' ✗';
+                allOptions[correct].classList.add('correct');
+                allOptions[correct].innerHTML += ' ✓ (الإجابة الصحيحة)';
+            }
+        }
+        
+        function continueGame() {
+            document.getElementById('notification').style.display = 'none';
+            currentQuestIndex++;
+            
+            if (currentQuestIndex >= quests.length) {
+                const notif = document.getElementById('notification');
+                notif.innerHTML = '<h2 style="font-size: 32px;">🎉 مبروك!</h2><p style="font-size: 20px;">لقد أكملت جميع المهام!</p>';
+                notif.style.display = 'block';
+            } else {
+                updateQuestUI();
+                isGameActive = true;
+            }
+        }
+
+        function drawMinimap() {
+            const canvas = document.getElementById('minimap-canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            ctx.fillStyle = "rgba(0, 20, 0, 0.8)";
+            ctx.fillRect(0, 0, w, h);
+            
+            ctx.strokeStyle = "rgba(0, 255, 0, 0.3)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(w/2, 0); 
+            ctx.lineTo(w/2, h);
+            ctx.moveTo(0, h/2); 
+            ctx.lineTo(w, h/2);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(w/2, h/2);
+            
+            if(currentQuestIndex < quests.length) {
+                const q = quests[currentQuestIndex];
+                
+                const markerPos = q.marker.position.clone();
+                markerPos.applyMatrix4(globeGroup.matrixWorld);
+                markerPos.project(camera);
+                
+                const targetX = markerPos.x * (w/4);
+                const targetY = -markerPos.y * (h/4);
+                
+                ctx.beginPath();
+                ctx.arc(targetX, targetY, 8, 0, 2*Math.PI);
+                ctx.fillStyle = "red";
+                ctx.fill();
+                
+                if (Date.now() % 1000 < 500) {
+                    ctx.strokeStyle = "red";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(targetX, targetY, 12, 0, 2*Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, 2*Math.PI);
+            ctx.fillStyle = "#ffff00";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            if (isGameActive) {
+                rotateGlobe(dt);
+                checkHotspotInCenter();
+                drawMinimap();
+            }
+            
+            // Animate hotspot markers (pulsing effect)
+            const time = Date.now() * 0.001;
+            quests.forEach(q => {
+                if (q.markerRing) {
+                    // Pulsing scale animation
+                    const scale = 1 + Math.sin(time * 2) * 0.2;
+                    q.markerRing.scale.set(scale, scale, 1);
+                    
+                    // Pulsing opacity
+                    q.markerRing.material.opacity = 0.4 + Math.sin(time * 2) * 0.3;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function returnToMenu() {
+            // Reset game state
+            isGameActive = false;
+            isZooming = false;
+            currentQuestIndex = 0;
+            
+            // Hide UI elements
+            document.getElementById('menu-button').style.display = 'none';
+            document.getElementById('notification').style.display = 'none';
+            
+            // Show start screen
+            document.getElementById('start-screen').style.display = 'flex';
+            
+            // Reset camera position
+            camera.position.set(0, 0, 1500);
+            
+            // Reset globe rotation
+            globeGroup.rotation.set(0, 0, 0);
+        }
+
+        init();
+    </script>
+</body>
+</html>
